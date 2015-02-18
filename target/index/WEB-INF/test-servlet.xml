@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/mvc 
+        http://www.springframework.org/schema/mvc/spring-mvc.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd">
+	<!-- handlemapping -->
+	<!-- <bean class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"/> 
+		<bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter"/> -->
+	<context:component-scan base-package="cn.com.alcatel_sbell.fulltextindex.controller"/>
+	
+	
+	<bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">  
+ <property name="messageConverters">  
+                        <list>  
+                                <ref bean="mappingJacksonHttpMessageConverter" />  
+                        </list>  
+                </property>  
+</bean>  
+         
+    <bean id="mappingJacksonHttpMessageConverter"  
+        class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">  
+         <property name = "supportedMediaTypes">  
+    <list>  
+     <bean class="org.springframework.http.MediaType">  
+      <constructor-arg index="0" value="text"/>  
+      <constructor-arg index="1" value="plain"/>  
+      <constructor-arg index="2" value="UTF-8"/>  
+     </bean>  
+      <bean class="org.springframework.http.MediaType">  
+      <constructor-arg index="0" value="*"/>  
+      <constructor-arg index="1" value="*"/>  
+      <constructor-arg index="2" value="UTF-8"/>  
+     </bean>  
+      <bean class="org.springframework.http.MediaType">  
+      <constructor-arg index="0" value="text"/>  
+      <constructor-arg index="1" value="*"/>  
+      <constructor-arg index="2" value="UTF-8"/>  
+     </bean>  
+      <bean class="org.springframework.http.MediaType">  
+      <constructor-arg index="0" value="application"/>  
+      <constructor-arg index="1" value="json"/>  
+      <constructor-arg index="2" value="UTF-8"/>  
+     </bean>  
+    </list>  
+   </property>  
+    </bean>     
+	
+	<mvc:annotation-driven />
+	<mvc:default-servlet-handler />
+	<mvc:view-controller path="/" view-name="/index" />
+	<mvc:resources location="/public/" mapping="/public/**" cache-period="31556926"/>
+ 	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<bean id="loginIntseptor" class="cn.com.alcatel_sbell.intercepters.LoginIntercepter"></bean>
+		</mvc:interceptor>
+	</mvc:interceptors> 
+	<bean
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/views/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+	<bean
+		class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping"/>
+	<!-- i18n -->
+	<!-- <bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource"> 
+		<property name="basename" value="/WEB-INF/messages/message" /> <property 
+		name="useCodeAsDefaultMessage" value="true" /> </bean> -->
+	<bean id="messageSource"
+		class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+		<!-- <property name="basename" value="/WEB-INF/messages/message" /> -->
+		<property name="basenames">
+			<list>
+				<value>/WEB-INF/messages/message</value>
+				<value>/WEB-INF/messages/sysmessage</value>
+			</list>
+		</property>
+		<property name="cacheSeconds" value="3600" />
+		<property name="useCodeAsDefaultMessage" value="true" />
+	</bean>
+	<bean id="localeChangeInterceptor"
+		class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor" />
+	<bean id="defaultUrlMapping"
+		class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping">
+		<property name="interceptors" ref="localeChangeInterceptor" />
+		<property name="order">
+			<value>1</value>
+		</property>
+	</bean>
+	<bean id="multipartResolver"
+		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+
+		<!-- one of the properties available; the maximum file size in bytes -->
+		<property name="maxUploadSize" value="104857600" />
+	</bean>
+</beans>

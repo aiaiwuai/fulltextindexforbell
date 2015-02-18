@@ -1,0 +1,34 @@
+#upload{
+	float:left;
+}
+#upload-button 
+{
+	height: 40px !important ; 
+	width: auto !important;
+}
+#fileQueue{
+	
+}
+.uploadify-queue-item{
+	max-width: 100% !important;
+	height: 30px;
+}
+.older{
+	color: red;
+}
+.newer{
+	color: green;
+}
+.same{
+	color: orange;
+}
+.raw
+{
+	color: green;
+}
+.navbar-inverse{
+	color: #9d9d9d;
+}
+.panelfooter,.panelheader{
+	margin-right: 30px;
+}
