@@ -3,18 +3,15 @@ package cn.com.alcatel_sbell.fulltextindex.controller;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Date;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.naming.directory.SearchControls;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
@@ -24,13 +21,13 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.highlight.Formatter;
 import org.apache.lucene.search.highlight.Highlighter;
 import org.apache.lucene.search.highlight.QueryScorer;
@@ -61,7 +58,8 @@ import cn.com.alcatel_sbell.utils.I18N;
 @RequestMapping("")
 @Component
 public class IndexController {
-	Logger index=Logger.getLogger("index");
+	Logger index = Logger.getLogger("index");
+
 	@RequestMapping("/index")
 	public ModelAndView show(HttpServletRequest request) throws Exception {
 		ModelAndView mView = new ModelAndView();
@@ -85,7 +83,8 @@ public class IndexController {
 		try {
 			Term term = new Term("id", id);
 			System.out.println(id);
-			Document documentByAssignId = LuceneUtils.getDocumentByAssignId("id", id);
+			Document documentByAssignId = LuceneUtils.getDocumentByAssignId(
+					"id", id);
 			new File(documentByAssignId.get("saveFilePath")).delete();
 			IndexWriter indexWriter = cn.com.alcatel_sbell.lucene.utils.LuceneUtils
 					.getIndexWriter();
@@ -95,47 +94,52 @@ public class IndexController {
 		} catch (Exception e) {
 			return "'error':'unkown error','status':'2'";
 		}
-	
+
 	}
+
 	@RequestMapping("/start_index")
 	public @ResponseBody Object start_index(
-			@RequestParam(value="path",defaultValue="\\\\sbardwf7\\Wireless_Training\\Agile Leadership") String path,
-			@RequestParam(value="ext",defaultValue="xls,doc,pdf") String types
-			){
+			@RequestParam(value = "path", defaultValue = "\\\\sbardwf7\\Wireless_Training\\Agile Leadership") String path,
+			@RequestParam(value = "ext", defaultValue = "xls,doc,pdf") String types) {
 		System.out.println("ss");
-		File parentDir=new File(path);	
+		File parentDir = new File(path);
 		System.out.println(types);
 		String[] split = types.split(",");
-		
-		List<String> ext=Arrays.asList(split);
+
+		List<String> ext = Arrays.asList(split);
 
 		System.out.println(FileUtils.getAllFiles(parentDir, ext));
-			return null;
+		return null;
 	}
-	@Scheduled(cron="0 0/1 * * * ? ")
-	public  void autoIndex() throws IOException, TikaException{
+
+	@Scheduled(cron = "0 0/1 * * * ? ")
+	public void autoIndex() throws IOException, TikaException {
 		index.info("auto start........");
 		String[] split = new String("xls,doc").split(",");
-		List<String> types=Arrays.asList(split);
-		List<File> allFiles = FileUtils.getAllFiles(new File("\\\\sbardwf7\\Wireless_Training\\Agile Leadership"), types);
+		List<String> types = Arrays.asList(split);
+		File pfile = new File("F:\\传智上课\\每日课程\\9期电商");
+		List<File> allFiles = FileUtils.getAllFiles(pfile, types);
 		for (File file : allFiles) {
 			indexfile(file);
-		}		
-	} 
-	public Map<String, String> searchByAbsolutePathAndName(File file) throws IOException{
-		
+		}
+	}
+
+	public Map<String, String> searchByAbsolutePathAndName(File file)
+			throws IOException {
+
 		System.out.println("filename" + file.getName());
-		String filename= file.getName();
+		String filename = file.getName();
 		Map<String, String> map = new HashMap<String, String>();
-		IndexSearcher indexSearcher =null;
+		IndexSearcher indexSearcher = null;
 		try {
-			indexSearcher= LuceneUtils.getIndexSearcher();
+			indexSearcher = LuceneUtils.getIndexSearcher();
 		} catch (Exception e) {
 			return map;
 		}
 		Query query1 = new TermQuery(new Term("filename", filename));
-		Query query2 = new TermQuery(new Term("saveFilePath", file.getAbsolutePath()));
-		BooleanQuery query=new  BooleanQuery();
+		Query query2 = new TermQuery(new Term("saveFilePath",
+				file.getAbsolutePath()));
+		BooleanQuery query = new BooleanQuery();
 		query.add(query1, Occur.MUST);
 		query.add(query2, Occur.MUST);
 		System.out.println("query" + query);
@@ -154,22 +158,21 @@ public class IndexController {
 		}
 		return map;
 	}
-	public void  indexfile(File file) throws IOException, TikaException {
+
+	public void indexfile(File file) throws IOException, TikaException {
 		Tika tkTika = new Tika();
 		String string1 = tkTika.parseToString(file);
 
 		String filename = file.getName();
 		long lastmodifieddate = file.lastModified();
 		if ("".equals(string1.trim())) {
-			index.info( "we get none  text from your docuemnt '" + filename
+			index.info("we get none  text from your docuemnt '" + filename
 					+ "',check it.");
 			return;
 		}
-		
-
 
 		Map<String, String> ob = searchByAbsolutePathAndName(file);
-		if ( StringUtils.equals(filename,ob.get("filename"))) {
+		if (StringUtils.equals(filename, ob.get("filename"))) {
 			float v = Long.parseLong(ob.get("lastmodified")) / 1000
 					- lastmodifieddate / 1000;
 			if (v < 1 && v > -1) {
@@ -179,20 +182,24 @@ public class IndexController {
 			}
 		}
 		Document document = new Document();
-		document.add(new StringField("id", FileUtils.generateRandonFileName(filename), Store.YES));
+		document.add(new StringField("id", FileUtils
+				.generateRandonFileName(filename), Store.YES));
 		document.add(new StringField("filename", filename, Store.YES));
-		document.add(new StringField("saveFilePath", file.getAbsolutePath(), Store.YES));
+		document.add(new StringField("saveFilePath", file.getAbsolutePath(),
+				Store.YES));
 		document.add(new StringField("holder", "public", Store.YES));
 
-		document.add(new StringField("lastmodified", Long.toString(lastmodifieddate), Store.YES));
-		document.add(new StringField("lastmodifiedstr", new Date(lastmodifieddate).toString(),
-				Store.YES));
+		document.add(new StringField("lastmodified", Long
+				.toString(lastmodifieddate), Store.YES));
+		document.add(new StringField("lastmodifiedstr", new Date(
+				lastmodifieddate).toString(), Store.YES));
 		document.add(new TextField("content", string1.trim(), Store.YES));
 		IndexWriter indexWriter = LuceneUtils.getIndexWriter();
 		indexWriter.addDocument(document);
 		indexWriter.commit();
-		index.info("index sucess"+filename);
+		index.info("index sucess" + filename);
 	}
+
 	@RequestMapping("/upload")
 	public @ResponseBody Object upload(
 			@RequestParam(value = "upload", required = true) MultipartFile file,
@@ -200,16 +207,16 @@ public class IndexController {
 			@RequestParam(value = "lastmodifieddatestr", required = true) String lastmodifieddatestr,
 			@RequestParam(value = "holder", required = true) String holder,
 			HttpServletRequest request, ModelMap model,
-			CommonsMultipartResolver cmr,DocumentBean db) throws Exception {
+			CommonsMultipartResolver cmr, DocumentBean db) throws Exception {
 		Tika tkTika = new Tika();
-		if(!StringUtils.equals("public", holder)){
-			holder=(String)request.getSession().getAttribute("REMOTE_USER");
+		if (!StringUtils.equals("public", holder)) {
+			holder = (String) request.getSession().getAttribute("REMOTE_USER");
 		}
 		db.setHolder(holder);
 		String string1 = tkTika.parseToString(file.getInputStream());
-		Metadata mt=new Metadata();
-		tkTika.parse(file.getInputStream(),mt);
-		String contontType=mt.get(Metadata.CONTENT_TYPE);
+		Metadata mt = new Metadata();
+		tkTika.parse(file.getInputStream(), mt);
+		String contontType = mt.get(Metadata.CONTENT_TYPE);
 		String filename = file.getOriginalFilename();
 		db.setFilename(filename);
 		if ("".equals(string1.trim())) {
@@ -219,8 +226,10 @@ public class IndexController {
 		AjaxQuery aj = new AjaxQuery();
 		@SuppressWarnings("unchecked")
 		Map<String, String> ob = (HashMap<String, String>) aj
-				.queryByFilenameAndHolder(db.getFilename(),db.getHolder(),request);
-		if ( StringUtils.equals(filename,ob.get("filename")) && StringUtils.equals(holder, ob.get("holder"))) {
+				.queryByFilenameAndHolder(db.getFilename(), db.getHolder(),
+						request);
+		if (StringUtils.equals(filename, ob.get("filename"))
+				&& StringUtils.equals(holder, ob.get("holder"))) {
 			float v = Long.parseLong(ob.get("lastmodified")) / 1000
 					- lastmodifieddate / 1000;
 			if (v < 1 && v > -1) {
@@ -228,7 +237,7 @@ public class IndexController {
 						+ "'";
 			}
 		}
-		saveFile(file, request,lastmodifieddate,db);
+		saveFile(file, request, lastmodifieddate, db);
 		String userName = (String) request.getSession().getAttribute(
 				"REMOTE_USER");
 		Document document = new Document();
@@ -237,7 +246,8 @@ public class IndexController {
 		document.add(new StringField("uploader", userName, Store.YES));
 		document.add(new StringField("contentType", contontType, Store.YES));
 		document.add(new StringField("holder", db.getHolder(), Store.YES));
-		document.add(new StringField("saveFilePath", db.getFilePath(), Store.YES));
+		document.add(new StringField("saveFilePath", db.getFilePath(),
+				Store.YES));
 		document.add(new StringField("lastmodified", lastmodifieddate
 				.toString(), Store.YES));
 		document.add(new StringField("lastmodifiedstr", lastmodifieddatestr,
@@ -247,24 +257,32 @@ public class IndexController {
 		indexWriter.addDocument(document);
 		System.out.println(string1.substring(0, 100));
 		indexWriter.commit();
-		index.info("index sucess"+filename);
+		index.info("index sucess" + filename);
 		return 1;
 	}
 
-	public void saveFile( MultipartFile file,HttpServletRequest request, Long lastmodifieddate, DocumentBean db) throws IllegalStateException, IOException{
-		String path=FileUtils.getRootPath(request,"\\WEB-INF\\upload")+FileUtils.generateRandomDir(FileUtils.generateRandonFileName(file.getOriginalFilename()));
-		File srcFile=new File(path);
+	public void saveFile(MultipartFile file, HttpServletRequest request,
+			Long lastmodifieddate, DocumentBean db)
+			throws IllegalStateException, IOException {
+		String path = FileUtils.getRootPath(request, "\\WEB-INF\\upload")
+				+ FileUtils.generateRandomDir(FileUtils
+						.generateRandonFileName(file.getOriginalFilename()));
+		File srcFile = new File(path);
 		srcFile.mkdirs();
 		db.setFileID(FileUtils.generateRandonFileName(db.getFilename()));
-		File tarFile=new File(srcFile, FileUtils.generateRandonFileName(file.getOriginalFilename()));
+		File tarFile = new File(srcFile, FileUtils.generateRandonFileName(file
+				.getOriginalFilename()));
 		file.transferTo(tarFile);
 		tarFile.setLastModified(lastmodifieddate);
 		db.setFilePath(tarFile.getAbsolutePath());
 	}
+
 	@RequestMapping("/fulltext")
-	public ModelAndView fullText(ModelAndView mv,@RequestParam(value="id",required=true)String id){
+	public ModelAndView fullText(ModelAndView mv,
+			@RequestParam(value = "id", required = true) String id) {
 		try {
-			Document documentByAssignId = LuceneUtils.getDocumentByAssignId("id", id);
+			Document documentByAssignId = LuceneUtils.getDocumentByAssignId(
+					"id", id);
 			mv.addObject("document", documentByAssignId);
 		} catch (Exception e) {
 			mv.addObject("content", "get error!");
@@ -272,9 +290,11 @@ public class IndexController {
 		mv.setViewName("fullText");
 		return mv;
 	}
+
 	@RequestMapping("/search")
-	public @ResponseBody Object search(	@RequestParam(value = "key", required = true) String string,
-			@RequestParam(value = "length", defaultValue="200") Integer digstlength,
+	public @ResponseBody Object search(
+			@RequestParam(value = "key", required = true) String string,
+			@RequestParam(value = "length", defaultValue = "200") Integer digstlength,
 			HttpServletRequest request,
 			@RequestParam(value = "holder", required = true) String holder)
 			throws Exception {
@@ -285,11 +305,11 @@ public class IndexController {
 		Analyzer analyzer = new IKAnalyzer();
 		QueryParser queryParser = new QueryParser("content", analyzer);
 		Query query1 = queryParser.parse(string);
-		if(!StringUtils.equals("public", holder)){
-			holder=(String)request.getSession().getAttribute("REMOTE_USER");
+		if (!StringUtils.equals("public", holder)) {
+			holder = (String) request.getSession().getAttribute("REMOTE_USER");
 		}
-		Query query2 = new TermQuery(new Term("holder",holder));
-		BooleanQuery query=new  BooleanQuery();
+		Query query2 = new TermQuery(new Term("holder", holder));
+		BooleanQuery query = new BooleanQuery();
 		query.add(query1, Occur.MUST);
 		query.add(query2, Occur.MUST);
 		IndexSearcher indexSearcher = LuceneUtils.getIndexSearcher();
@@ -301,41 +321,42 @@ public class IndexController {
 		Scorer frgementScorer = new QueryScorer(query);
 		Highlighter highlighter = new Highlighter(formatter, frgementScorer);
 		highlighter.setTextFragmenter(new SimpleFragmenter(digstlength));
-//		Map<String, Map<String, String>> map = new LinkedHashMap<String, Map<String, String>>();
-//		for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
-//			Map<String, String> cMap = new HashMap<String, String>();
-//			System.out.println("得分" + scoreDoc.score);
-//			cMap.put("score", Float.toString(scoreDoc.score));
-//			Document document = indexSearcher.doc(scoreDoc.doc);
-//			String string2 = document.get("filename");
-//			System.out.println(string2);
-//			String bestFragment = highlighter.getBestFragment(new IKAnalyzer(),
-//					"contont", document.get("content"));
-//			// System.out.println("pdf:" + document.get("content"));
-//			System.out.println(bestFragment);
-//			cMap.put("digest", bestFragment);
-//			map.put(string2, cMap);
-//		}
-		Map<String,DocumentBean> map = new LinkedHashMap<String, DocumentBean>();
+		// Map<String, Map<String, String>> map = new LinkedHashMap<String,
+		// Map<String, String>>();
+		// for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
+		// Map<String, String> cMap = new HashMap<String, String>();
+		// System.out.println("得分" + scoreDoc.score);
+		// cMap.put("score", Float.toString(scoreDoc.score));
+		// Document document = indexSearcher.doc(scoreDoc.doc);
+		// String string2 = document.get("filename");
+		// System.out.println(string2);
+		// String bestFragment = highlighter.getBestFragment(new IKAnalyzer(),
+		// "contont", document.get("content"));
+		// // System.out.println("pdf:" + document.get("content"));
+		// System.out.println(bestFragment);
+		// cMap.put("digest", bestFragment);
+		// map.put(string2, cMap);
+		// }
+		Map<String, DocumentBean> map = new LinkedHashMap<String, DocumentBean>();
 		for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
-			DocumentBean db=new DocumentBean();
+			DocumentBean db = new DocumentBean();
 			db.setMatchscore(scoreDoc.score);
 			Document document = indexSearcher.doc(scoreDoc.doc);
 			String bestFragment = highlighter.getBestFragment(new IKAnalyzer(),
 					"contont", document.get("content"));
 			db.setFilename(document.get("filename"));
 			db.setDigist(bestFragment);
-			db.setLastmodifieddatestr( document.get("lastmodifiedstr"));
+			db.setLastmodifieddatestr(document.get("lastmodifiedstr"));
 			db.setLastmodified(document.get("lastmodified"));
 			db.setHolder(document.get("holder"));
-			if(new File(document.get("saveFilePath")).exists()){
+			if (new File(document.get("saveFilePath")).exists()) {
 				db.setFilePath(document.get("saveFilePath"));
-			}else{
+			} else {
 				db.setFilePath("");
 			}
 			db.setUploader(document.get("uploader"));
 			db.setFileID(document.get("id"));
-			map.put(db.getFileID(),db);
+			map.put(db.getFileID(), db);
 		}
 		return map;
 
