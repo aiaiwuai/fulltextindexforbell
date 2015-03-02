@@ -2,13 +2,20 @@ package cn.com.alcatel_sbell.fulltextindex.controller;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Date;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
+import javax.naming.directory.SearchControls;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
@@ -31,7 +38,10 @@ import org.apache.lucene.search.highlight.Scorer;
 import org.apache.lucene.search.highlight.SimpleFragmenter;
 import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
 import org.apache.tika.Tika;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -49,7 +59,9 @@ import cn.com.alcatel_sbell.utils.I18N;
 
 @Controller
 @RequestMapping("")
+@Component
 public class IndexController {
+	Logger index=Logger.getLogger("index");
 	@RequestMapping("/index")
 	public ModelAndView show(HttpServletRequest request) throws Exception {
 		ModelAndView mView = new ModelAndView();
@@ -79,14 +91,106 @@ public class IndexController {
 					.getIndexWriter();
 			indexWriter.deleteDocuments(term);
 			indexWriter.commit();
-
 			return "'sucess':'ok','status':'1'";
 		} catch (Exception e) {
 			return "'error':'unkown error','status':'2'";
 		}
 	
 	}
+	@RequestMapping("/start_index")
+	public @ResponseBody Object start_index(
+			@RequestParam(value="path",defaultValue="\\\\sbardwf7\\Wireless_Training\\Agile Leadership") String path,
+			@RequestParam(value="ext",defaultValue="xls,doc,pdf") String types
+			){
+		System.out.println("ss");
+		File parentDir=new File(path);	
+		System.out.println(types);
+		String[] split = types.split(",");
+		
+		List<String> ext=Arrays.asList(split);
 
+		System.out.println(FileUtils.getAllFiles(parentDir, ext));
+			return null;
+	}
+	@Scheduled(cron="0/5 * * * * ? ")
+	public  void autoIndex() throws IOException, TikaException{
+		index.info("auto start........");
+		String[] split = new String("xls,dox").split(",");
+		List<String> types=Arrays.asList(split);
+		List<File> allFiles = FileUtils.getAllFiles(new File("\\\\sbardwf7\\Wireless_Training\\Agile Leadership"), types);
+		for (File file : allFiles) {
+			indexfile(file);
+		}		
+	} 
+	public Map<String, String> searchByAbsolutePathAndName(File file) throws IOException{
+		
+		System.out.println("filename" + file.getName());
+		String filename= file.getName();
+		Map<String, String> map = new HashMap<String, String>();
+		IndexSearcher indexSearcher =null;
+		try {
+			indexSearcher= LuceneUtils.getIndexSearcher();
+		} catch (Exception e) {
+			return map;
+		}
+		Query query1 = new TermQuery(new Term("filename", filename));
+		Query query2 = new TermQuery(new Term("saveFilePath", file.getAbsolutePath()));
+		BooleanQuery query=new  BooleanQuery();
+		query.add(query1, Occur.MUST);
+		query.add(query2, Occur.MUST);
+		System.out.println("query" + query);
+		TopDocs topDocs = indexSearcher.search(query, Integer.MAX_VALUE);
+		System.out.println("结果数：" + topDocs.totalHits);
+		for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
+			System.out.println("score" + scoreDoc.score);
+			map.put("score", scoreDoc.score + "");
+			Document document = indexSearcher.doc(scoreDoc.doc);
+			String string2 = document.get("filename");
+			System.out.println("filename:" + string2);
+			map.put("filename", string2);
+			map.put("lastmodified", document.get("lastmodified"));
+			map.put("lastmodifiedstr", document.get("lastmodifiedstr"));
+			map.put("saveFilePath", document.get("saveFilePath"));
+		}
+		return map;
+	}
+	public void  indexfile(File file) throws IOException, TikaException {
+		Tika tkTika = new Tika();
+		String string1 = tkTika.parseToString(file);
+		Metadata mt=new Metadata();
+		String filename = file.getName();
+		long lastmodifieddate = file.lastModified();
+		if ("".equals(string1.trim())) {
+			index.info( "we get none  text from your docuemnt '" + filename
+					+ "',check it.");
+		}
+		
+		AjaxQuery aj = new AjaxQuery();
+		@SuppressWarnings("unchecked")
+		Map<String, String> ob = searchByAbsolutePathAndName(file);
+		if ( StringUtils.equals(filename,ob.get("filename"))) {
+			float v = Long.parseLong(ob.get("lastmodified")) / 1000
+					- lastmodifieddate / 1000;
+			if (v < 1 && v > -1) {
+				index.info("you upload the identical docuemnt of '" + filename
+						+ "'");
+			}
+		}
+		Document document = new Document();
+		document.add(new StringField("id", FileUtils.generateRandonFileName(filename), Store.YES));
+		document.add(new StringField("filename", filename, Store.YES));
+		document.add(new StringField("saveFilePath", file.getAbsolutePath(), Store.YES));
+		document.add(new StringField("holder", "public", Store.YES));
+
+		document.add(new StringField("lastmodified", Long.toString(lastmodifieddate), Store.YES));
+		document.add(new StringField("lastmodifiedstr", new Date(lastmodifieddate).toString(),
+				Store.YES));
+		document.add(new TextField("content", string1.trim(), Store.YES));
+		IndexWriter indexWriter = LuceneUtils.getIndexWriter();
+		indexWriter.addDocument(document);
+		indexWriter.commit();
+		index.info("index sucess"+filename);
+	}
 	@RequestMapping("/upload")
 	public @ResponseBody Object upload(
 			@RequestParam(value = "upload", required = true) MultipartFile file,
@@ -141,6 +245,7 @@ public class IndexController {
 		indexWriter.addDocument(document);
 		System.out.println(string1.substring(0, 100));
 		indexWriter.commit();
+		index.info("index sucess"+filename);
 		return 1;
 	}
 

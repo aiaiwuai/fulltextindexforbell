@@ -1,7 +1,13 @@
 package cn.com.alcatel_sbell.utils;
 
+import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
@@ -46,5 +52,29 @@ public class FileUtils {
 		int d1 = hashCode & 0xf;
 		int d2 = (hashCode >> 4) & 0xf;
 		return "/" + d1 + "/" + d2+"/";
+	}
+	public static List<File> getAllFiles(File parentDir,List<String> types) {
+	     List<File> lfile = new ArrayList<File>();
+	     LinkedList<File> queue=new LinkedList<File>(); 
+	     queue.add(parentDir);
+	     while(queue.size()>0){
+	
+	    	 File[] listFiles = queue.poll().listFiles();
+	    	 for (File file : listFiles) {
+				if(file.isDirectory()){
+					queue.add(file);
+				}else{
+					if(types.size()>0){
+					String ext = file.getName().substring(file.getName().lastIndexOf(".")+1);
+					if(types.contains(ext)){
+						lfile.add(file);
+					}
+					}else{
+						lfile.add(file);
+					}
+				}
+			}
+	     }
+	     return lfile;
 	}
 }
