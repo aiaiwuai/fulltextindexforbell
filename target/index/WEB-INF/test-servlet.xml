@@ -17,23 +17,6 @@
 	<!-- <bean class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"/> 
 		<bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter"/> -->
 		
-		
-		
-		
-
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
 	<context:component-scan base-package="cn.com.alcatel_sbell.fulltextindex.controller"/>
 	
 	

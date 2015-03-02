@@ -300,7 +300,10 @@ $('.modal').on('hidden.bs.modal', function (e) {
                             }
                         }
                         if(n.filePath!="" && n.filePath!=null){
-                            downloadfile='<a href="'+base+'ajax/downloadfile.action?id='+i+'" type="button" key="'+i+'" class="btn btn-success downloadfile" >DOWN-FILE</a>';
+//                            downloadfile='<a href="'+base+'ajax/downloadfile.action?id='+i+'" type="button" key="'+i+'" class="btn btn-success downloadfile" >DOWN-FILE</a>';
+                            downloadfile='<a href="file:'+n.filePath+'" type="button" key="'+i+'" class="btn btn-success downloadfile" >DOWN-FILE</a>';
+                            
+                            
                         }
                     	var buttongroup='<div class="btn-group" role="group">'+deleteindex+downloadfile+deletefile+'</div>';
                         str += "<tr><td><a target='_blank' href=\""+base+"fulltext.action?id="+i+"\">" + n.filename + "</a></td><td>"+n.lastmodifieddatestr+"</td><td>"+n.holder+"</td><td>"+n.uploader+"</td><td>"+buttongroup+"</td></tr>";

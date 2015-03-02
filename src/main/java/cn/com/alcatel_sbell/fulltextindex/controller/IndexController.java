@@ -112,10 +112,10 @@ public class IndexController {
 		System.out.println(FileUtils.getAllFiles(parentDir, ext));
 			return null;
 	}
-	@Scheduled(cron="0/5 * * * * ? ")
+	@Scheduled(cron="0 0/1 * * * ? ")
 	public  void autoIndex() throws IOException, TikaException{
 		index.info("auto start........");
-		String[] split = new String("xls,dox").split(",");
+		String[] split = new String("xls,doc").split(",");
 		List<String> types=Arrays.asList(split);
 		List<File> allFiles = FileUtils.getAllFiles(new File("\\\\sbardwf7\\Wireless_Training\\Agile Leadership"), types);
 		for (File file : allFiles) {
@@ -157,16 +157,17 @@ public class IndexController {
 	public void  indexfile(File file) throws IOException, TikaException {
 		Tika tkTika = new Tika();
 		String string1 = tkTika.parseToString(file);
-		Metadata mt=new Metadata();
+
 		String filename = file.getName();
 		long lastmodifieddate = file.lastModified();
 		if ("".equals(string1.trim())) {
 			index.info( "we get none  text from your docuemnt '" + filename
 					+ "',check it.");
+			return;
 		}
 		
-		AjaxQuery aj = new AjaxQuery();
-		@SuppressWarnings("unchecked")
+
+
 		Map<String, String> ob = searchByAbsolutePathAndName(file);
 		if ( StringUtils.equals(filename,ob.get("filename"))) {
 			float v = Long.parseLong(ob.get("lastmodified")) / 1000
@@ -174,6 +175,7 @@ public class IndexController {
 			if (v < 1 && v > -1) {
 				index.info("you upload the identical docuemnt of '" + filename
 						+ "'");
+				return;
 			}
 		}
 		Document document = new Document();
