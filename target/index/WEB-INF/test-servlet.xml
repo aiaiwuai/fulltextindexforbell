@@ -16,9 +16,9 @@
 	<!-- handlemapping -->
 	<!-- <bean class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"/> 
 		<bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter"/> -->
-		
 	<context:component-scan base-package="cn.com.alcatel_sbell.fulltextindex.controller"/>
-	
+	    <!-- task任务扫描注解 -->  
+    <task:annotation-driven/>  
 	
 	<bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">  
  <property name="messageConverters">  

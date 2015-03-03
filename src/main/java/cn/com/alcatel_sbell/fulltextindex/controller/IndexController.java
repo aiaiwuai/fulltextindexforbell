@@ -78,8 +78,17 @@ public class IndexController {
 
 	@RequestMapping("/delete")
 	public @ResponseBody Object delete(
-			@RequestParam(value = "id", required = true) String id)
+			@RequestParam(value = "id", defaultValue="all") String id)
 			throws Exception {
+		if(StringUtils.equals("all", id)){
+			try {
+				LuceneUtils.deleteAllDocument();
+				return "'sucess':'ok','status':'1'";
+			} catch (Exception e) {
+				return "'error':'unkown error','status':'3'";
+			}
+			
+		}
 		try {
 			Term term = new Term("id", id);
 			System.out.println(id);
@@ -96,32 +105,50 @@ public class IndexController {
 		}
 
 	}
-
+    public void deleteIndexById(String id){
+    	Term term = new Term("id", id);
+		try {
+			IndexWriter indexWriter = cn.com.alcatel_sbell.lucene.utils.LuceneUtils
+					.getIndexWriter();
+			indexWriter.deleteDocuments(term);
+			indexWriter.commit();
+		} catch (Exception e) {
+			index.info("delete exists indexed document faliure!");
+		}
+		
+    }
 	@RequestMapping("/start_index")
 	public @ResponseBody Object start_index(
-			@RequestParam(value = "path", defaultValue = "\\\\sbardwf7\\Wireless_Training\\Agile Leadership") String path,
+			@RequestParam(value = "path", defaultValue = "\\\\sbardwf7\\Wireless_Training") String path,
 			@RequestParam(value = "ext", defaultValue = "xls,doc,pdf") String types) {
-		System.out.println("ss");
-		File parentDir = new File(path);
-		System.out.println(types);
-		String[] split = types.split(",");
+		try {
+			index.info("manual index start ........");
+			autoIndex();
 
-		List<String> ext = Arrays.asList(split);
+			return "index success";
+		} catch (Exception e) {
+			return "index faliure";
+		}
 
-		System.out.println(FileUtils.getAllFiles(parentDir, ext));
-		return null;
 	}
 
-	@Scheduled(cron = "0 0/1 * * * ? ")
+	@Scheduled(cron = "0 0 1 * * ? ")
 	public void autoIndex() throws IOException, TikaException {
 		index.info("auto start........");
-		String[] split = new String("xls,doc").split(",");
+		String[] split = new String("xls,doc,xlsx,docx,pdf,ppt,pptm").split(",");
 		List<String> types = Arrays.asList(split);
-		File pfile = new File("F:\\传智上课\\每日课程\\9期电商");
+		File pfile = new File("\\\\sbardwf7\\Wireless_Training\\");
+//		File pfile = new File("\\\\sbardwf7\\swe\\wzy\\wqs\\test");
+		index.info("get files........");
 		List<File> allFiles = FileUtils.getAllFiles(pfile, types);
+		Integer i=allFiles.size();
+		index.info("file count "+i);
 		for (File file : allFiles) {
+			index.info("index "+file.getAbsolutePath()+"........");
 			indexfile(file);
+			index.info("file remain "+--i);
 		}
+		index.info("all done ........");
 	}
 
 	public Map<String, String> searchByAbsolutePathAndName(File file)
@@ -142,9 +169,7 @@ public class IndexController {
 		BooleanQuery query = new BooleanQuery();
 		query.add(query1, Occur.MUST);
 		query.add(query2, Occur.MUST);
-		System.out.println("query" + query);
 		TopDocs topDocs = indexSearcher.search(query, Integer.MAX_VALUE);
-		System.out.println("结果数：" + topDocs.totalHits);
 		for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
 			System.out.println("score" + scoreDoc.score);
 			map.put("score", scoreDoc.score + "");
@@ -154,15 +179,21 @@ public class IndexController {
 			map.put("filename", string2);
 			map.put("lastmodified", document.get("lastmodified"));
 			map.put("lastmodifiedstr", document.get("lastmodifiedstr"));
+			map.put("id", document.get("id"));
 			map.put("saveFilePath", document.get("saveFilePath"));
 		}
 		return map;
 	}
 
-	public void indexfile(File file) throws IOException, TikaException {
+	public void indexfile(File file) throws IOException {
 		Tika tkTika = new Tika();
-		String string1 = tkTika.parseToString(file);
-
+		String string1="";
+		try {
+			 string1 = tkTika.parseToString(file);
+		} catch (Exception e) {
+			index.error("can't read file:"+file.getAbsolutePath());
+			return;
+		}
 		String filename = file.getName();
 		long lastmodifieddate = file.lastModified();
 		if ("".equals(string1.trim())) {
@@ -179,6 +210,9 @@ public class IndexController {
 				index.info("you upload the identical docuemnt of '" + filename
 						+ "'");
 				return;
+			}
+			else{
+				deleteIndexById(ob.get("id"));
 			}
 		}
 		Document document = new Document();
@@ -280,13 +314,14 @@ public class IndexController {
 	@RequestMapping("/fulltext")
 	public ModelAndView fullText(ModelAndView mv,
 			@RequestParam(value = "id", required = true) String id) {
-		try {
-			Document documentByAssignId = LuceneUtils.getDocumentByAssignId(
-					"id", id);
-			mv.addObject("document", documentByAssignId);
-		} catch (Exception e) {
-			mv.addObject("content", "get error!");
-		}
+//		try {
+//			Document documentByAssignId = LuceneUtils.getDocumentByAssignId(
+//					"id", id);
+//			mv.addObject("document", documentByAssignId);
+//		} catch (Exception e) {
+//			mv.addObject("content", "get error!");
+//		}
+		mv.addObject("content", "closed!");
 		mv.setViewName("fullText");
 		return mv;
 	}

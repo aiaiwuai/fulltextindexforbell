@@ -54,7 +54,7 @@
 
     </div> <!-- /container -->
     <div class="container">
-    	<DIV ID="uploadfile" class="collapse"   role="tabpanel">
+    	<DIV ID="uploadfile--d" class="collapse--d"   style="display: none"   role="tabpanel--d">
     		<div class="row">
 				<div class="col-md-2" >
 					<input type="file" name="upload" id="upload"  />
@@ -66,10 +66,15 @@
 				</div>
 				 	 <div class="checkbox col-md-3" data-toggle="tooltip" data-placement="top" title="select for public  otherwise for private" >
    					 	<label>
-     				 			<input id="holder" type="checkbox" checked  > Index For Public
+     				 			<input id="holder" type="checkbox" disabled=true  > Index For Public
     					</label>
   						</div>
 			</div>
+
+  
+
+
+
 
 			<div class="row">
 				<div id="fileQueue"></div>
@@ -79,6 +84,21 @@
 			</div>
 					<div id="sellmd"></div>	
 		</DIV>
+      <DIV ID="uploadfile" class="collapse"   role="tabpanel">
+        <div class="form-group col-md-4">
+        <label  for="directory">Indexed Directory:</label>
+         <input id="directory"  class="form-control" type="text" disabled="true" value="\\sbardwf7\Wireless_Training\"/>
+         <label for="fileType">Indexed File type:</label>
+         <input id="fileType"  class="form-control" type="text" disabled="true" value="xls,doc"/>
+          <label for="autotime">Auto index Time:</label>
+         <input id="autotime"  class="form-control" type="text" disabled="true" value="0 0 1 * * * *(1:00)"/>
+        </div>
+
+
+       
+         
+      </div>
+
 		<div  id="querykey"  class="collapse"   role="tabpanel">
 	
   				<div class="row">

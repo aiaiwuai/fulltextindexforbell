@@ -17,9 +17,14 @@ $(function() {
                     $.each(data, function(i, n) {
                         // str += "<li><div class='resultItem'>文件名:" + i + ",匹配度:" + n.score * 100 + "</br>";
                         // str += "摘要:" + n['digest'] + "</div>";
-                       str +=  '<div class="panel panel-default">\
-  <div class="panel-heading"><span class="panelheader">FileName:'+n.filename+'</span><span class="panelheader"><a href="'+base+'ajax/downloadfile.action?id='+i+'">\
-    DOWNLOAD</a></span><span clas="panelheader"><a target="_blank" href="'+base+'fulltext.action?id='+i+'">FullText</a></span></div>\
+  //                      str +=  '<div class="panel panel-default">\
+  // <div class="panel-heading"><span class="panelheader">FileName:'+n.filename+'</span><span class="panelheader"><a href="'+base+'ajax/downloadfile.action?id='+i+'">\
+  //   DOWNLOAD</a></span><span clas="panelheader"><a target="_blank" href="'+base+'fulltext.action?id='+i+'">FullText</a></span></div>\
+  // <div class="panel-body"><pre>'+ n.digist+'</pre></div><div class="panel-footer"><span class="panelfooter">Matching Score:'+n.matchscore*100+'</span>\
+  //    <span class="panelfooter">Group:'+n.holder+'</span><span class="panelfooter">Uploder:'+n.uploader+'</span></div></div>'
+     str +=  '<div class="panel panel-success">\
+  <div class="panel-heading"><span class="panelheader">'+n.filename+'</span><span class="panelheader"><a class="COPYTOCLIPBORAD" href="file:'+n.filePath+'">\
+    DOWNLOAD</a></span></div>\
   <div class="panel-body"><pre>'+ n.digist+'</pre></div><div class="panel-footer"><span class="panelfooter">Matching Score:'+n.matchscore*100+'</span>\
      <span class="panelfooter">Group:'+n.holder+'</span><span class="panelfooter">Uploder:'+n.uploader+'</span></div></div>'
                     });
@@ -28,6 +33,7 @@ $(function() {
         str =  '<div class="panel panel-default"><div class="panel-heading">no result</div><div class="panel-body">Have no Match-Document!</div></div>'
                 }
                    $("div#result").html(str);
+                   $("div#result .panel:odd").removeClass("panel-default").addClass("panel-info");
             }
         });
 
@@ -39,30 +45,30 @@ $(function() {
     			$(this).tooltip();
     		}
     });
+     $(document).on("click",".COPYTOCLIPBORAD",function(){
+   			newalert("for security please  type  Ctrl+C to copy  the file-path then open it in your  File Explorer</br><textarea style='width:260' >"+$(this).attr("href")+"</textarea>","alert");
+    		
+    });
     $(".collapse").on("show.bs.collapse", function() {
         $(this).siblings(".collapse.in").collapse('hide');
         if ($(this).attr("id") == "haveindex") {
             list();
         }
         if($(this).attr("id")=="uploadfile" ){
-        	usehandleall();
+        	// usehandleall();
         }
          if($(this).attr("id")=="querykey" ){
             if($("#key").val()=="")
             $("#result").html("");
             }
-        
-
-
-       
     });
-    function usehandleall(){
-    	if($(".uploadify-queue-item").length==0 && !$(".handleall").hasClass("disabled")){
-       			$(".handleall").addClass("disabled");
-       		}else if(($(".uploadify-queue-item").length!=0 && $(".handleall").hasClass("disabled"))){
-       			$(".handleall").removeClass("disabled");
-       		}
-    }
+    // function usehandleall(){
+    // 	if($(".uploadify-queue-item").length==0 && !$(".handleall").hasClass("disabled")){
+    //    			$(".handleall").addClass("disabled");
+    //    		}else if(($(".uploadify-queue-item").length!=0 && $(".handleall").hasClass("disabled"))){
+    //    			$(".handleall").removeClass("disabled");
+    //    		}
+    // }
     function newalert(item, titile) {
         $("#error-content").append(item);
         $("#error-titile").text(titile || "ERROR!");
@@ -71,91 +77,91 @@ $(function() {
     function  newalertaddtext (argument) {
     	 $("#error-content").append(argument);
     }
-    $("#upload").uploadify({
-        'swf': base + "public/js/node_modules/uploadify/uploadify.swf",
-        "uploader": base + "upload.action;jsessionid=" + $("#jseesionid").val(),
-        //	           'script'         : 'scripts/uploadify',//servlet的路径或者.jsp 这是访问servlet 'scripts/uploadif'   
-        'method': 'POST ', //如果要传参数，就必须改为GET  
-        //	           'cancelImg'      : 'js/cancel.png',  
-        //	           'folder'         : 'uploads', //要上传到的服务器路径，  
-        'queueID': 'fileQueue',
-        'removeTimeout' : 0,
-        "multi": true,
-        'buttonClass': 'btn',
-        'buttonText': 'Click And Select Files',
-        'auto': false, //选定文件后是否自动上传，默认false  
-        //	           'multi'          : , //是否允许同时上传多文件，默认false    
-        'sizeLimit': 104857600, //设置单个文件大小限制，单位为byte    
-        'queueSizeLimit': 10, //限制在一次队列中的次数（可选定几个文件）。默认值= 999，而一次可传几个文件有 simUploadLimit属性决定。  
-        //	           'fileDesc'       : '支持格式:jpg或gif', //如果配置了以下的'fileExt'属性，那么这个属性是必须的    
-        //	           'fileExt'        : '*.jpg;*.gif',//允许的格式  
-        "fileObjName": "upload",
-        'uploadLimit': 10,
-        'formData': {
-            lastmodifieddate: "",
-            lastmodifieddatestr: "",
-            holder:""
-        },
-        'itemTemplate' : '<div id="${fileID}" class="uploadify-queue-item">\
-        			<div class="original col-md-3">\
-                    <div class="cancel">\
-                        <a href="javascript:$(\'#${instanceID}\').uploadify(\'cancel\', \'${fileID}\')"><span class=\"glyphicon glyphicon-remove\" aria-hidden=\"true\"></span></a>\
-                    </div>\
-                    <span class="fileName">${fileName} (${fileSize})</span><span class="data"></span>\
-                	</div>\
-                	<div class="lastmodifieddate col-md-3"></div>\
-                	<div class="index col-md-2"></div>\
-                	<div class="server col-md-3"></div>\
-                	<div class="upl col-md-1"></div>\
-                </div>' ,
-        //	           "formData":{"S":"s"},
-        'onQueueComplete' : function(queueData) {
-             $("#error-titile").text("THE UPLOAD RESULT:");
-             $(".modal").modal("show");
-            $(".handleall").addClass("disabled");
+    // $("#upload").uploadify({
+    //     'swf': base + "public/js/node_modules/uploadify/uploadify.swf",
+    //     "uploader": base + "upload.action;jsessionid=" + $("#jseesionid").val(),
+    //     //	           'script'         : 'scripts/uploadify',//servlet的路径或者.jsp 这是访问servlet 'scripts/uploadif'   
+    //     'method': 'POST ', //如果要传参数，就必须改为GET  
+    //     //	           'cancelImg'      : 'js/cancel.png',  
+    //     //	           'folder'         : 'uploads', //要上传到的服务器路径，  
+    //     'queueID': 'fileQueue',
+    //     'removeTimeout' : 0,
+    //     "multi": true,
+    //     'buttonClass': 'btn',
+    //     'buttonText': 'Click And Select Files',
+    //     'auto': false, //选定文件后是否自动上传，默认false  
+    //     //	           'multi'          : , //是否允许同时上传多文件，默认false    
+    //     'sizeLimit': 104857600, //设置单个文件大小限制，单位为byte    
+    //     'queueSizeLimit': 10, //限制在一次队列中的次数（可选定几个文件）。默认值= 999，而一次可传几个文件有 simUploadLimit属性决定。  
+    //     //	           'fileDesc'       : '支持格式:jpg或gif', //如果配置了以下的'fileExt'属性，那么这个属性是必须的    
+    //     //	           'fileExt'        : '*.jpg;*.gif',//允许的格式  
+    //     "fileObjName": "upload",
+    //     'uploadLimit': 10,
+    //     'formData': {
+    //         lastmodifieddate: "",
+    //         lastmodifieddatestr: "",
+    //         holder:""
+    //     },
+    //     'itemTemplate' : '<div id="${fileID}" class="uploadify-queue-item">\
+    //     			<div class="original col-md-3">\
+    //                 <div class="cancel">\
+    //                     <a href="javascript:$(\'#${instanceID}\').uploadify(\'cancel\', \'${fileID}\')"><span class=\"glyphicon glyphicon-remove\" aria-hidden=\"true\"></span></a>\
+    //                 </div>\
+    //                 <span class="fileName">${fileName} (${fileSize})</span><span class="data"></span>\
+    //             	</div>\
+    //             	<div class="lastmodifieddate col-md-3"></div>\
+    //             	<div class="index col-md-2"></div>\
+    //             	<div class="server col-md-3"></div>\
+    //             	<div class="upl col-md-1"></div>\
+    //             </div>' ,
+    //     //	           "formData":{"S":"s"},
+    //     'onQueueComplete' : function(queueData) {
+    //          $("#error-titile").text("THE UPLOAD RESULT:");
+    //          $(".modal").modal("show");
+    //         $(".handleall").addClass("disabled");
 
-        },
-        'onUploadSuccess': function(file, data, response) {
-            if (data != 1) {
-                newalertaddtext("<span class='older'>"+data+"</span></br>");
-            } else {
-                newalertaddtext("<span class='newer'>The file '" + file.name + "'' has been successfully index</span>.</br>");
-            }
-        },
-        'onCancel': function(file) {
-        	setTimeout(usehandleall,2000);
-            $("div#tips").append('<br/>The file ' + file.name + ' was cancelled.');
-        },
-         'onClearQueue' : function(queueItemCount) {
-         	setTimeout(usehandleall,2000);
-        } ,
-        'onSelect': function(file, queueID) {
-            // $("#upload").uploadify("cancel");
-            $("#sellmd").html("");
-             $("div#tips").html("");
-            // if (!handlefilename(file.name)) {
-            //     newalert("filename can't contain the text '&'!");
-            //     $("#upload").uploadify("cancel", file.id);
-            //     return;
-            // }
-            var sellmd = file.modificationdate.getTime();
-            var sellmdstr = file.modificationdate;
-            var filename = file.name;
-  			$(".handleall").removeClass("disabled");
-            validataFile(filename, sellmdstr, sellmd,file);
+    //     },
+    //     'onUploadSuccess': function(file, data, response) {
+    //         if (data != 1) {
+    //             newalertaddtext("<span class='older'>"+data+"</span></br>");
+    //         } else {
+    //             newalertaddtext("<span class='newer'>The file '" + file.name + "'' has been successfully index</span>.</br>");
+    //         }
+    //     },
+    //     'onCancel': function(file) {
+    //     	setTimeout(usehandleall,2000);
+    //         $("div#tips").append('<br/>The file ' + file.name + ' was cancelled.');
+    //     },
+    //      'onClearQueue' : function(queueItemCount) {
+    //      	setTimeout(usehandleall,2000);
+    //     } ,
+    //     'onSelect': function(file, queueID) {
+    //         // $("#upload").uploadify("cancel");
+    //         $("#sellmd").html("");
+    //          $("div#tips").html("");
+    //         // if (!handlefilename(file.name)) {
+    //         //     newalert("filename can't contain the text '&'!");
+    //         //     $("#upload").uploadify("cancel", file.id);
+    //         //     return;
+    //         // }
+    //         var sellmd = file.modificationdate.getTime();
+    //         var sellmdstr = file.modificationdate;
+    //         var filename = file.name;
+  		// 	$(".handleall").removeClass("disabled");
+    //         validataFile(filename, sellmdstr, sellmd,file);
 
-        },
-        'onUploadStart': function(file) {
-            $("#upload").uploadify("settings", "formData", {
-                "lastmodifieddate": file.modificationdate.getTime(),
-                "lastmodifieddatestr": file.modificationdate,
-                "holder":getHolder("holder")
-            });
+    //     },
+    //     'onUploadStart': function(file) {
+    //         $("#upload").uploadify("settings", "formData", {
+    //             "lastmodifieddate": file.modificationdate.getTime(),
+    //             "lastmodifieddatestr": file.modificationdate,
+    //             "holder":getHolder("holder")
+    //         });
 
 
-        }
+    //     }
 
-    });
+    // });
 function getHolder(holderid){
 	if($("#"+holderid).prop("checked")==true){
                 		return "public";

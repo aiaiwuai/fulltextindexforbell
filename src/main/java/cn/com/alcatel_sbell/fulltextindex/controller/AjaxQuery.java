@@ -112,15 +112,14 @@ public class AjaxQuery {
 	
 	@RequestMapping("/deletefile")
 	public @ResponseBody Object deletefile(
-			@RequestParam(value = "id", required = true) String id,HttpSession session)
+			@RequestParam(value = "id", defaultValue="all") String id,HttpSession session)
 			throws IOException {
-		Document document;
 		List<HashMap<String, String>> list=new ArrayList<HashMap<String, String>>();
 		HashMap<String, String> map=new HashMap<String, String>();
+		Document document;
 		try {
 			document = LuceneUtils.getDocumentByAssignId("id", id);
 		} catch (Exception e1) {
-			// TODO Auto-generated catch block
 			map.put("error", "unkown error");
 			map.put("status", "3");
 			list.add(map);
@@ -139,7 +138,6 @@ public class AjaxQuery {
 			map.put("status", "1");
 			list.add(map);
 			return list;
-					
 		} catch (Exception e) {
 			map.put("error", "error on delete file");
 			map.put("status", "2");

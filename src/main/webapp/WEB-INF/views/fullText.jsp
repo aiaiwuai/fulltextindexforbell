@@ -11,7 +11,8 @@
   <!-- Default panel contents -->
   <div class="panel-heading">${document.get("filename")}</div>
   <div class="panel-body">
-    <pre>${document.get("content")}</pre>
+  	
+    <pre> ${content } ${document.get("content")}</pre>
   </div>
 </div>
 </div>

@@ -10,6 +10,7 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
@@ -72,5 +73,11 @@ public class LuceneUtils {
 		
 		
 		
+	}
+
+	public static void deleteAllDocument() throws Exception {
+		Query query = new MatchAllDocsQuery();
+		indexWriter.deleteDocuments(query);
+		indexWriter.commit();
 	}
 }
