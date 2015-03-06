@@ -6,8 +6,79 @@ $(function() {
             url: base + "search.action",
             type: "post",
             dataType: "json",
-            data: {"key":$("#key").val(),"holder":getHolder("queryholder")},
+            data: {"key":$("#key").val(),"holder":getHolder("queryholder"),"length":$("#digistlength").val()},
             success: function(data) {
+            	// originSrearchHandle(data);
+            	tableSearchHandle(data);
+}
+        });
+        return false;
+
+
+
+    });
+        $(document).on("click","#exporttoexcel", function() {
+//         $.ajax({
+//             url: base + "exporttoexcel.action",
+//             type: "post",
+//             async:false,
+//             // dataType:"application/vnd.ms-excel",
+//             data: {"key":$("#key").val(),"holder":getHolder("queryholder"),"length":$("#digistlength").val()},
+//             success: function(data) {
+//             	// originSrearchHandle(data);
+//             	tableSearchHandle(data);
+// }
+//         });
+//         // window.open(base+"exporttoexcel.action?key="+$("#key").val()+"&length="+$("#digistlength").val()+"&holder="+getHolder("queryholder"));
+//         return false;
+$("#extoe").submit();
+  return false;
+
+    });
+    function tableSearchHandle(data){
+    		      if (!$.isEmptyObject(data)) {
+    		      	 var order=0;
+                    var str = "<table class=\"table table-bordered\"><caption>"+data.length+" results,<a id='exporttoexcel' href='#'>Export Results to Excel</a></caption><thead>\
+                    \<tr><th></th><th>FileName</th><th>Product name</th><th>Product release</th><th>Match content digist</th><th>Uploader</th><th>downloadlink</th></thead><tbody>";
+
+                    $.each(data, function(i, n) {
+                    	if(i=="length"){
+                    		return;
+                    	}
+                        var deleteindex="";
+                        var deletefile="";
+                        var downloadfile="";
+
+                        if(n.uploader==$("#loginout").attr("curuser")){
+                               deleteindex='<button type="button" class="btn btn-danger deleteindex" key="'+i+'">DEL-INDEX</button>';
+                            if(n.filePath!="" && n.filePath!=null){
+                                     deletefile='<button type="button" key="'+i+'" class="btn btn-danger deletefile">DEL-FILE</button>';
+                            }
+                        }
+                        if(n.filePath!="" && n.filePath!=null){
+//                            downloadfile='<a href="'+base+'ajax/downloadfile.action?id='+i+'" type="button" key="'+i+'" class="btn btn-success downloadfile" >DOWN-FILE</a>';
+                            downloadfile='<a href="file:'+n.filePath+'" type="button" key="'+i+'" class="btn btn-success downloadfile COPYTOCLIPBORAD" >DOWN-FILE</a>';
+                        }
+                    	var buttongroup='<div class="btn-group " role="group">'+deleteindex+downloadfile+deletefile+'</div>';
+                    	var shortdigust=n.digist.substring(0,20);
+                        str += "<tr><td>"+(++order)+"</td><td><a target='_blank' href=\""+base+"fulltext.action?id="+i+"\">" + n.filename + "</a></td><td></td><td></td><td>"+n.digist+"</td><td>"+n.uploader+"</td><td>"+buttongroup+"</td></tr>";
+                    });
+                    str+="</tbody></table>"
+                   $("div#result").html(str);
+                }else{
+                	   $("div#result").html("There is no result for your words");
+                }
+
+
+
+
+
+
+
+
+
+    }
+function originSrearchHandle(data){
   //               '<div class="panel panel-default">\
   // <div class="panel-heading">'+n.filename+    n.holder   +n.uploder+'</div>\
   // <div class="panel-body">'+ n.digest+'</div><div class="panel-footer">n.score\
@@ -34,21 +105,30 @@ $(function() {
                 }
                    $("div#result").html(str);
                    $("div#result .panel:odd").removeClass("panel-default").addClass("panel-info");
-            }
-        });
+            
 
 
-
-    });
+}
     $(document).on("*","mouseover",function(){
     		if($(this).attr("data-toggle").indexOf("tooltip")>-1){
     			$(this).tooltip();
     		}
     });
      $(document).on("click",".COPYTOCLIPBORAD",function(){
-   			newalert("for security please  type  Ctrl+C to copy  the file-path then open it in your  File Explorer</br><input size=auto type='text' value="+$(this).attr("href")+">","alert");
-    		
+   			newalert("For security please  type  Ctrl+C to copy  the file-path then open it in your file explorer!</br><textarea  class='patharea form-control' >"+$(this).attr("href")+"</textarea>","COPY THEN OPEN");
+    	
+    		$('.modal').on('shown.bs.modal', function (e) {
+              $(".patharea").focus().select();
+               $(document).keypress(function (e) {
+               		if(e.which==99 &&  e.ctrlKey ){
+        			$(".modal").modal('hide');
+        		}
+   			 });
+            })
+            return false;
+    		   
     });
+
     $(".collapse").on("show.bs.collapse", function() {
         $(this).siblings(".collapse.in").collapse('hide');
         if ($(this).attr("id") == "haveindex") {

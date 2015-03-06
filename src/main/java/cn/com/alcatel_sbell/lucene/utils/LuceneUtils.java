@@ -30,7 +30,7 @@ public class LuceneUtils {
 	static {
 		try {
 			indexPath = LuceneUtils.class.getResource("/").getPath();
-			directory = FSDirectory.open(new File(indexPath+"../../index"));
+			directory = FSDirectory.open(new File(indexPath+"../../../index"));
 			analyzer = new IKAnalyzer();
 			IndexWriterConfig indexWriterConfig = new IndexWriterConfig(
 					Version.LATEST, analyzer);

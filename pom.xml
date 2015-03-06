@@ -115,6 +115,11 @@
 			<artifactId>jackson-mapper-lgpl</artifactId>
 			<version>1.9.6</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>3.11-beta2</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<finalName>index</finalName>

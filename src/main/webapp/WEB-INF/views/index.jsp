@@ -102,16 +102,21 @@
 		<div  id="querykey"  class="collapse"   role="tabpanel">
 	
   				<div class="row">
-  					<div class="form-group col-md-4">
-   					 	<label class="sr-only" for="key">Email address</label>
-  					  <input type="text" class="form-control" id="key" placeholder="Enter Key Words For Search"/>
+<form action="<%=base%>exporttoexcel.action" method="post" id="extoe" class="form-inline">
+  					<div class="form-group">
+              <label for="key">Search Words</label>
+  					  <input type="text" name="key" class="form-control" id="key"  placeholder="Enter Key Words For Search"/>
   					</div>
-					<div class="checkbox col-md-2" data-toggle="tooltip" data-placement="top" title="select for public  otherwise for 			private" >
-   						 <label>
-     					 <input id="queryholder" type="checkbox" checked  > Index For Public
-    				</label>
+            <div class="form-group">
+                <label for="digistlength">Digist Length</label>
+               <input class="form-control" name="digistlength" id="digistlength" type="text" value="50"  />
   					</div>
-  					<button type="submit"  id="submitquery" class="btn btn-default">Search</button>
+              <div class="form-group checkbox" data-toggle="tooltip" data-placement="top" title="select for public  otherwise for  private" >
+               <label for="queryholder">Index For Public</label>
+               <input id="queryholder"  name="holder" type="checkbox" checked  /> 
+            </div> 
+  					<button type="submit" id="submitquery" class="btn btn-default">Search</button>
+            </form>
   					</div>
   					<div class="row">
   						<div id="result"> </div>

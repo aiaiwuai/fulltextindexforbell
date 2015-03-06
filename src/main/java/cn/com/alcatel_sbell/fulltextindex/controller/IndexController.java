@@ -1,15 +1,21 @@
 package cn.com.alcatel_sbell.fulltextindex.controller;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Date;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -34,6 +40,14 @@ import org.apache.lucene.search.highlight.QueryScorer;
 import org.apache.lucene.search.highlight.Scorer;
 import org.apache.lucene.search.highlight.SimpleFragmenter;
 import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.xssf.streaming.SXSSFSheet;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -115,15 +129,17 @@ public class IndexController {
 		} catch (Exception e) {
 			index.info("delete exists indexed document faliure!");
 		}
-		
     }
 	@RequestMapping("/start_index")
 	public @ResponseBody Object start_index(
 			@RequestParam(value = "path", defaultValue = "\\\\sbardwf7\\Wireless_Training") String path,
-			@RequestParam(value = "ext", defaultValue = "xls,doc,pdf") String types) {
+			@RequestParam(value = "ext", defaultValue = "xls,doc,pdf") String types,HttpServletRequest request) {
 		try {
+			String parameter = request.getParameter("path");
+			System.out.println(new String(parameter.getBytes("iso-8859-1"),"utf-8"));
+			String encodingConvert = cn.com.alcatel_sbell.utils.StringUtils.encodingConvert("iso-8859-1", "utf-8", path);
 			index.info("manual index start ........");
-			autoIndex();
+			indexFiles(encodingConvert,types);
 
 			return "index success";
 		} catch (Exception e) {
@@ -131,14 +147,36 @@ public class IndexController {
 		}
 
 	}
+	public void indexFiles(String path,String typesString){
+		String[] split = typesString.split(",");
+		List<String> types = Arrays.asList(split);
+		File pfile = new File(path);
+		index.info("get files........");
+		List<File> allFiles = FileUtils.getAllFiles(pfile, types);
+		Integer i=allFiles.size();
+		index.info("file count "+i);
+		for (File file : allFiles) {
+			index.info("index "+file.getAbsolutePath()+"........");
+			try {
+				indexfile(file);		
+			} catch (Exception e) {
+				index.error(e.getMessage());
+			}
+		
+			index.info("file remain "+--i);
+		}
+		index.info("all done ........");
+		
+	}
 
-	@Scheduled(cron = "0 0 1 * * ? ")
+	@Scheduled(cron = "0 50 11 * * ? ")
 	public void autoIndex() throws IOException, TikaException {
 		index.info("auto start........");
 		String[] split = new String("xls,doc,xlsx,docx,pdf,ppt,pptm").split(",");
 		List<String> types = Arrays.asList(split);
-		File pfile = new File("\\\\sbardwf7\\Wireless_Training\\");
+//		File pfile = new File("\\\\sbardwf7\\Wireless_Training\\");
 //		File pfile = new File("\\\\sbardwf7\\swe\\wzy\\wqs\\test");
+		File pfile = new File("E:\\javadocument\\Activity赵庆轩\\activity\\day1\\资料");
 		index.info("get files........");
 		List<File> allFiles = FileUtils.getAllFiles(pfile, types);
 		Integer i=allFiles.size();
@@ -325,11 +363,111 @@ public class IndexController {
 		mv.setViewName("fullText");
 		return mv;
 	}
-
+	@RequestMapping("/exporttoexcel")
+	public @ResponseBody Object exporttoexcel(@RequestParam(value = "key", required = true) String string,
+			@RequestParam(value = "length", defaultValue = "50") Integer digstlength,
+			HttpServletRequest request,HttpServletResponse response,
+			@RequestParam(value = "holder", required = true) String holder) throws Exception{
+		if(StringUtils.equals(holder, "on")){
+			holder="public";
+		}else{
+			holder=(String) request.getSession().getAttribute("REMOTE_USER");
+		}
+			@SuppressWarnings("unchecked")
+			Map<String, Object> search = (Map<String, Object>)search(string, digstlength, request, holder);
+			 XSSFWorkbook wb =new  XSSFWorkbook (); 
+			XSSFSheet sheet = wb.createSheet("new sheet"); 
+			Integer i=0,j=0,count=0;
+			XSSFRow row = sheet.createRow(i++);
+			row.createCell(j++).setCellValue("order");
+			row.createCell(j++).setCellValue("filename");
+			row.createCell(j++).setCellValue("matchscore");
+			row.createCell(j++).setCellValue("filePath");
+			row.createCell(j++).setCellValue("uploader");
+			row.createCell(j++).setCellValue("lastmodifieddatestr");
+//			row.createCell(j++).setCellValue("digist");
+			Collection<Object> values = search.values();
+			for (Object object : values) {
+				 row = sheet.createRow(i++);
+				 Integer k=0;
+				try {
+					DocumentBean  documentBean=(DocumentBean)object;
+					row.createCell(k++).setCellValue(i-1);
+					row.createCell(k++).setCellValue(documentBean.getFilename());
+					row.createCell(k++).setCellValue(documentBean.getMatchscore());
+					row.createCell(k++).setCellValue(documentBean.getFilePath());
+					row.createCell(k++).setCellValue(documentBean.getUploader());
+					row.createCell(k++).setCellValue(documentBean.getLastmodifieddatestr());
+//					row.createCell(k++).setCellValue(documentBean.getDigist());
+				} catch (Exception e) {
+					count=(Integer)object;
+					System.out.println(object);
+				}
+				
+			}
+			String filename = string+"_"+digstlength+"_"+count+".xlsx";
+			response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+			String agent = request.getHeader("user-agent");
+			filename = FileUtils.encodeDownloadFilename(filename, agent);
+			response.setHeader("Content-Disposition", "attachment;filename="
+					+ filename);
+//			response.setHeader("Content-Disposition", "attachment;filename="
+//					+ "x.xlsx");
+			ServletOutputStream outputStream = response.getOutputStream();
+			FileOutputStream fOut = new FileOutputStream(filename);	
+//			wb.write(outputStream);
+			wb.write(fOut);
+			wb.close();
+//			outputStream.flush();
+//			outputStream.close();
+			InputStream in = new FileInputStream(new File(filename));
+			int b;
+			while ((b = in.read()) != -1) {
+				response.getOutputStream().write(b);
+			}
+			in.close();
+			return null;
+			
+//           FileInputStream fis=new file
+//			HSSFCell cell = row.createCell((short)0); 
+//			cell.setCellValue(1); 
+//			row.createCell((short)1).setCellValue(1.2); 
+//			row.createCell((short)2).setCellValue("This is a string"); 
+//			row.createCell((short)3).setCellValue(true); 
+//			FileOutputStream fileOut = new FileOutputStream("workbook.xls"); 
+//			wb.write(fileOut); 
+//			fileOut.close();
+//		Document document;
+//		try {
+//			document = LuceneUtils.getDocumentByAssignId("id", id);
+//		} catch (Exception e1) {
+//
+//		}
+//		 File file = new File(document.get("saveFilePath"));
+//		
+//		String filename = document.get("filename");
+//		String mimeType = document.get("contentType");
+//		response.setContentType("application/vnd.ms-excel;charset=utf-8");
+//		String agent = request.getHeader("user-agent");
+//		filename = FileUtils.encodeDownloadFilename(filename, agent);
+//		response.setHeader("Content-Disposition", "attachment;filename="
+//				+ filename);
+//		InputStream in = new FileInputStream(file);
+//		int b;
+//		while ((b = in.read()) != -1) {
+//			response.getOutputStream().write(b);
+//		}
+//		in.close();
+//		
+		
+		
+		
+		
+	}
 	@RequestMapping("/search")
 	public @ResponseBody Object search(
 			@RequestParam(value = "key", required = true) String string,
-			@RequestParam(value = "length", defaultValue = "200") Integer digstlength,
+			@RequestParam(value = "length", defaultValue = "20") Integer digstlength,
 			HttpServletRequest request,
 			@RequestParam(value = "holder", required = true) String holder)
 			throws Exception {
@@ -350,7 +488,7 @@ public class IndexController {
 		IndexSearcher indexSearcher = LuceneUtils.getIndexSearcher();
 		System.out.println(query);
 		TopDocs topDocs = indexSearcher.search(query, Integer.MAX_VALUE);
-		System.out.println("结果数：" + topDocs.totalHits);
+		System.out.println("result：" + topDocs.totalHits);
 		Formatter formatter = new SimpleHTMLFormatter("<font color='red'>",
 				"</font>");
 		Scorer frgementScorer = new QueryScorer(query);
@@ -372,7 +510,7 @@ public class IndexController {
 		// cMap.put("digest", bestFragment);
 		// map.put(string2, cMap);
 		// }
-		Map<String, DocumentBean> map = new LinkedHashMap<String, DocumentBean>();
+		Map<String, Object> map = new LinkedHashMap<String, Object>();
 		for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
 			DocumentBean db = new DocumentBean();
 			db.setMatchscore(scoreDoc.score);
@@ -393,6 +531,9 @@ public class IndexController {
 			db.setFileID(document.get("id"));
 			map.put(db.getFileID(), db);
 		}
+		
+		map.put("length", map.size());
+		//todo: excel文件生成和保存，存在性和时效性检查，每天第一次查询生成，每天自动删除。
 		return map;
 
 	}
